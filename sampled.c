@@ -100,7 +100,15 @@ static void _log_time(void) {
 int main(int argc, char *argv[])
 {
 
-	app_name = argv[0];
+	// Get the executable name for logging
+	// 
+	app_name = strrchr(argv[0], '/');
+	if (app_name) {
+		// skip past the last /
+		++app_name;   
+	} else {
+		app_name = argv[0];
+	}
 
 	openlog(app_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 	syslog(LOG_INFO, "Starting %s", app_name);
@@ -135,9 +143,9 @@ int main(int argc, char *argv[])
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
 
-        // Set file umask: 644 
-        //
-        umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
+	// Set file umask: 644 
+	//
+	umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
 
 	// Set working directory to root
 	//
