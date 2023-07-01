@@ -49,11 +49,11 @@ static char *app_name = NULL;
 
 // Error string
 //
-#define ERROR_FORMAT	"An error occurred. The error number is: %s"
+#define ERROR_FORMAT	"An error occurred. The error is: %s"
 
 // Sleep time between log writes
 //
-#define LOG_INTERVAL	1000
+#define LOG_INTERVAL	1
 
 #ifndef DEBUG_OUT
 #define DEBUG_OUT	0
@@ -118,9 +118,9 @@ int main(int argc, char *argv[])
 
 	// Log any session errors
 	//
-	if (setsid() < 0) {
+	if (setsid() < -1) {
 		syslog(LOG_ERR, ERROR_FORMAT, strerror(errno));
-		return ERR_FORK;
+		return ERR_SETSID;
 	}
 
 	// Let parent process exit
