@@ -45,6 +45,7 @@ static char *app_name = NULL;
 #define ERR_FORK	3
 #define ERR_SETSID	4
 #define ERR_CHDIR	5
+#define ERR_SEGV	6
 #define ERR_WTF		187
 
 // Error string
@@ -72,14 +73,20 @@ static char *app_name = NULL;
 static void _signal_handler(const int signal) {
 	switch(signal) {
 		case SIGHUP: 
+			syslog(LOG_INFO, "received SIGHUP - no action taken.");
 			break;
 		case SIGTERM:
 			syslog(LOG_INFO, "received SIGTERM - exiting.");
 			closelog();
 			exit(OK);
 			break;
+		case SIGSEGV:
+			syslog(LOG_ERR, "receive SIGSEGV - a segmentation fault occurred; exiting.");
+			closelog();
+			exit(ERR_SEGV);
+			break;
 		default:
-			syslog(LOG_INFO, "received unhandled signal.");
+			syslog(LOG_INFO, "received unhandled signal - no action taken.");
 	}
 }
 
@@ -97,18 +104,16 @@ static void _log_time(void) {
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
+
+	// Clear the environment to be safer per
+	// https://wiki.sei.cmu.edu/confluence/display/c/ENV03-C.+Sanitize+the+environment+when+invoking+external+programs
+	clearenv();
 
 	// Get the executable name for logging
 	// 
-	app_name = strrchr(argv[0], '/');
-	if (app_name) {
-		// skip past the last /
-		++app_name;   
-	} else {
-		app_name = argv[0];
-	}
+	app_name = "sampled";
 
 	openlog(app_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 	syslog(LOG_INFO, "Starting %s", app_name);
@@ -156,8 +161,9 @@ int main(int argc, char *argv[])
 
 	// Handle signals
 	//
-	signal(SIGHUP, _signal_handler);
 	signal(SIGTERM, _signal_handler);
+	signal(SIGHUP,  _signal_handler);
+	signal(SIGSEGV, _signal_handler);
 
 	// Do what we're supposed to do - log system time to syslog
 	// every second.
